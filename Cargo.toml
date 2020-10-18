@@ -1,0 +1,13 @@
+[package]
+name = "mapbox_maps"
+version = "0.1.0"
+authors = ["Aleksandr Ovchinnikov <mail@mr1sunshine.com>"]
+edition = "2018"
+description = "Maps with Rust."
+readme = "README.md"
+repository = "https://https://github.com/mr1sunshine/mapbox-maps-rs"
+license-file = "LICENSE"
+keywords = ["mapbox", "maps"]
+categories = ["multimedia"]
+
+[dependencies]
