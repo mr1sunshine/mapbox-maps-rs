@@ -3,24 +3,30 @@ mod config;
 pub use config::Config;
 use crate::network::NetworkManager;
 use eyre::Result;
+use crate::style_spec::Style;
 
 pub struct Map {
-    config: Config,
-    nm: NetworkManager
+    _config: Config,
+    nm: NetworkManager,
+    style: Option<Style>
 }
 
 impl Map {
     pub fn new(config: Config) -> Result<Self> {
         let nm = NetworkManager::new(config.token())?;
         Ok(Self {
-            config,
-            nm
+            _config: config,
+            nm,
+            style: None
         })
     }
 
-    pub async fn load_style(&self, uri: &str) -> Result<()> {
+    pub async fn load_style(&mut self, uri: &str) -> Result<()> {
         let style_str = self.nm.load_style(uri).await?;
-        println!("{}", style_str);
+        let style = serde_json::from_str::<Style>(&style_str)?;
+        self.style = Some(style);
+
+        println!("{:#?}", self.style);
         Ok(())
     }
 }
