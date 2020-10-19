@@ -1,6 +1,6 @@
 # mapbox-maps-rs &emsp; [![Build Status]][actions]
 
-[Build Status]: https://img.shields.io/github/workflow/status/mr1sunshine/mapbox-maps-rs/CI/main
+[Build Status]: https://img.shields.io/github/workflow/status/mr1sunshine/mapbox-maps-rs/Rust?style=plastic
 [actions]: https://github.com/mr1sunshine/mapbox-maps-rs/actions?query=branch%3Amain
 
 ### About this project.
