@@ -17,4 +17,10 @@ impl Map {
             nm
         })
     }
+
+    pub async fn load_style(&self, uri: &str) -> Result<()> {
+        let style_str = self.nm.load_style(uri).await?;
+        println!("{}", style_str);
+        Ok(())
+    }
 }

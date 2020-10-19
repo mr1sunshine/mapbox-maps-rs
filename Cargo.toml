@@ -13,4 +13,5 @@ categories = ["multimedia"]
 [dependencies]
 eyre = "0.6.1"
 reqwest = {version = "0.10.8", features = ["blocking", "gzip"]}
+tokio = { version = "0.2.22", features = ["macros", "tcp", "dns", "io-util"] }
 
