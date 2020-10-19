@@ -11,3 +11,6 @@ keywords = ["mapbox", "maps"]
 categories = ["multimedia"]
 
 [dependencies]
+eyre = "0.6.1"
+reqwest = {version = "0.10.8", features = ["blocking", "gzip"]}
+

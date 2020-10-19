@@ -8,4 +8,8 @@ impl Config {
             token: token.to_owned()
         }
     }
+
+    pub fn token(&self) -> &str {
+        &self.token
+    }
 }
