@@ -22,3 +22,5 @@ enum_dispatch = "0.3.3"
 css-colors = "1.0.1"
 raster_color = { version = "0.2.0", package = "raster" }
 scan_fmt = "0.2.5"
+tilejson = {git = "https://github.com/mr1sunshine/tilejson-rs.git" }
+

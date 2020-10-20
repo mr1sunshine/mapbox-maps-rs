@@ -1,14 +1,15 @@
 mod config;
 
-pub use config::Config;
 use crate::network::NetworkManager;
+use crate::style::Style;
+pub use config::Config;
 use eyre::Result;
-use crate::style_spec::Style;
+use std::rc::Rc;
 
 pub struct Map {
     _config: Config,
-    nm: NetworkManager,
-    style: Option<Style>
+    nm: Rc<NetworkManager>,
+    style: Option<Style>,
 }
 
 impl Map {
@@ -16,17 +17,14 @@ impl Map {
         let nm = NetworkManager::new(config.token())?;
         Ok(Self {
             _config: config,
-            nm,
-            style: None
+            nm: Rc::new(nm),
+            style: None,
         })
     }
 
     pub async fn load_style(&mut self, uri: &str) -> Result<()> {
-        let style_str = self.nm.load_style(uri).await?;
-        let style = serde_json::from_str::<Style>(&style_str)?;
+        let style = Style::new(uri, self.nm.clone()).await?;
         self.style = Some(style);
-
-        println!("{:#?}", self.style);
         Ok(())
     }
 }
