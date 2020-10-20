@@ -27,4 +27,10 @@ impl Map {
         self.style = Some(style);
         Ok(())
     }
+
+    pub async fn render(&mut self) -> Result<()> {
+        println!("Map rendered");
+
+        Ok(())
+    }
 }
