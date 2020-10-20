@@ -17,8 +17,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build
-      run: cargo build --verbose -- -D warnings
+      run: cargo build --verbose
       env:
-        RUSTFLAGS="-D warnings"
+        RUSTFLAGS=-D warnings
     - name: Run tests
       run: cargo test --verbose
