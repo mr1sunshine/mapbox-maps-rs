@@ -1,5 +1,5 @@
 use eyre::Result;
-use futures::executor::block_on;
+// use futures::executor::block_on;
 use mapbox_maps::{Config, Map};
 use std::env;
 use std::rc::Rc;
