@@ -1,24 +1,26 @@
 mod config;
 
 use crate::network::NetworkManager;
+use crate::render::Painter;
 use crate::style::Style;
 pub use config::Config;
 use eyre::Result;
 use std::rc::Rc;
 
 pub struct Map {
-    _config: Config,
     nm: Rc<NetworkManager>,
     style: Option<Style>,
+    painter: Painter,
 }
 
 impl Map {
-    pub fn new(config: Config) -> Result<Self> {
+    pub async fn new(config: Config) -> Result<Self> {
         let nm = NetworkManager::new(config.token())?;
+        let painter = Painter::new(config.window()).await?;
         Ok(Self {
-            _config: config,
             nm: Rc::new(nm),
             style: None,
+            painter,
         })
     }
 
