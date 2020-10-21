@@ -30,8 +30,10 @@ impl Map {
         Ok(())
     }
 
-    pub async fn render(&mut self) -> Result<()> {
+    pub fn render(&mut self) -> Result<()> {
         println!("Map rendered");
+
+        self.painter.render()?;
 
         Ok(())
     }

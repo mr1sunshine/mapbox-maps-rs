@@ -5,6 +5,8 @@ pub(crate) struct Painter {
     device: wgpu::Device,
     queue: wgpu::Queue,
     swap_chain: wgpu::SwapChain,
+    sc_desc: wgpu::SwapChainDescriptor,
+    surface: wgpu::Surface,
 }
 
 impl Painter {
@@ -47,6 +49,56 @@ impl Painter {
             device,
             queue,
             swap_chain,
+            surface,
+            sc_desc,
         })
+    }
+
+    pub fn render(&mut self) -> Result<()> {
+        let frame = match self.swap_chain.get_current_frame() {
+            Ok(frame) => frame,
+            Err(_) => {
+                self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
+                self.swap_chain.get_current_frame()?
+            }
+        };
+
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+        {
+            let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
+                    attachment: &frame.output.view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color {
+                            r: 0.1,
+                            g: 0.2,
+                            b: 0.3,
+                            a: 1.0,
+                        }),
+                        store: true,
+                    },
+                }],
+                depth_stencil_attachment: None,
+            });
+            rpass.push_debug_group("Prepare data for draw.");
+            // rpass.set_pipeline(&self.pipeline);
+            // rpass.set_bind_group(0, &self.bind_group, &[]);
+            // rpass.set_index_buffer(self.index_buf.slice(..));
+            // rpass.set_vertex_buffer(0, self.vertex_buf.slice(..));
+            rpass.pop_debug_group();
+            rpass.insert_debug_marker("Draw!");
+            // rpass.draw_indexed(0..self.index_count as u32, 0, 0..1);
+            // if let Some(ref pipe) = self.pipeline_wire {
+            //     rpass.set_pipeline(pipe);
+            //     rpass.draw_indexed(0..self.index_count as u32, 0, 0..1);
+            // }
+        }
+
+        self.queue.submit(Some(encoder.finish()));
+
+        Ok(())
     }
 }

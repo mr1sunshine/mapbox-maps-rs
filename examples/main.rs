@@ -41,7 +41,7 @@ async fn main() -> Result<()> {
             },
             Event::RedrawRequested(_) => {
                 println!("redraw requested");
-                block_on(map.render()).expect("Render failed");
+                map.render().expect("Render failed");
             }
             _ => (),
         }
