@@ -1,8 +1,9 @@
 mod map;
 mod network;
-mod style_spec;
-mod style;
 mod render;
+mod source;
+mod style;
+mod style_spec;
 
-pub use map::Map;
 pub use map::Config;
+pub use map::Map;

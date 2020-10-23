@@ -19,7 +19,7 @@ pub(crate) enum Source {
 }
 
 #[derive(Deserialize, Debug)]
-pub enum Scheme {
+pub(crate) enum Scheme {
     #[serde(rename = "xyz")]
     XYZ,
     #[serde(rename = "tms")]

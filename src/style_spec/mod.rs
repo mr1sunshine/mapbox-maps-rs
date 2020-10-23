@@ -5,6 +5,7 @@ mod types;
 
 pub(crate) use expression::Expression;
 pub(crate) use layer::Layer;
+pub(crate) use source::Scheme;
 pub(crate) use source::Source;
 pub(crate) use source::Vector;
 // pub(crate) use source::Raster;
