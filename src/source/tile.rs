@@ -26,4 +26,8 @@ impl Tile {
             size,
         }
     }
+
+    pub fn tile_id(&self) -> &OverscaledTileId {
+        &self.tile_id
+    }
 }

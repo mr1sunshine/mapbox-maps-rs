@@ -158,6 +158,10 @@ impl OverscaledTileId {
     pub fn key(&self) -> String {
         self.key.clone()
     }
+
+    pub fn canonical(&self) -> &CanonicalTileId {
+        &self.canonical
+    }
 }
 
 impl PartialEq for OverscaledTileId {

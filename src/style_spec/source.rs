@@ -18,7 +18,7 @@ pub(crate) enum Source {
     Image(Image),
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub(crate) enum Scheme {
     #[serde(rename = "xyz")]
     XYZ,
@@ -26,7 +26,7 @@ pub(crate) enum Scheme {
     TMS,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub(crate) struct Vector {
     pub attribution: Option<String>,
     #[serde(default = "default_bounds")]
