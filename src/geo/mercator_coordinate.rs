@@ -7,11 +7,11 @@ fn circumfrence_at_latitude(lat: f32) -> f32 {
     EARTH_CIRCUMFRENCE * (lat * PI / 180.0).cos()
 }
 
-fn mercator_x_from_lng(lng: f32) -> f32 {
+pub(crate) fn mercator_x_from_lng(lng: f32) -> f32 {
     (180.0 + lng) / 360.0
 }
 
-fn mercator_y_from_lat(lat: f32) -> f32 {
+pub(crate) fn mercator_y_from_lat(lat: f32) -> f32 {
     (180.0 - (180.0 / PI * (PI / 4.0 + lat * PI / 360.0).tan().ln())) / 360.0
 }
 

@@ -10,3 +10,7 @@ mod mercator_coordinate;
 const EARTH_RADIUS: f32 = 6371008.8;
 
 pub(crate) use lng_lat::LngLat;
+pub(crate) use lng_lat_bounds::LngLatBounds;
+pub(crate) use mercator_coordinate::{
+    mercator_x_from_lng, mercator_y_from_lat, MercatorCoordinate,
+};

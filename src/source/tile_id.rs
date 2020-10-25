@@ -144,6 +144,20 @@ impl OverscaledTileId {
             OverscaledTileId::new(z, self.wrap, z, x + 1, y + 1),
         ]
     }
+
+    pub fn wrapped(&self) -> OverscaledTileId {
+        OverscaledTileId::new(
+            self.overscaled_z,
+            0,
+            self.canonical.z,
+            self.canonical.x,
+            self.canonical.y,
+        )
+    }
+
+    pub fn key(&self) -> String {
+        self.key.clone()
+    }
 }
 
 impl PartialEq for OverscaledTileId {
