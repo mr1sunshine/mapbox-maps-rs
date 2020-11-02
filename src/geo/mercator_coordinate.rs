@@ -15,7 +15,7 @@ pub(crate) fn mercator_y_from_lat(lat: f32) -> f32 {
     (180.0 - (180.0 / PI * (PI / 4.0 + lat * PI / 360.0).tan().ln())) / 360.0
 }
 
-fn mercator_z_from_altitude(altitude: f32, lat: f32) -> f32 {
+pub(crate) fn mercator_z_from_altitude(altitude: f32, lat: f32) -> f32 {
     altitude / circumfrence_at_latitude(lat)
 }
 

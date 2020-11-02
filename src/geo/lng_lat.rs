@@ -1,7 +1,7 @@
 use crate::util::wrap;
 use std::fmt::{self, Display, Formatter};
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub(crate) struct LngLat {
     lng: f32,
     lat: f32,

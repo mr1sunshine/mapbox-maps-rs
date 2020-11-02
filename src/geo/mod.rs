@@ -1,6 +1,8 @@
+mod edge_insets;
 mod lng_lat;
 mod lng_lat_bounds;
 mod mercator_coordinate;
+mod transform;
 
 /*
 * Approximate radius of the earth in meters.
@@ -11,6 +13,6 @@ const EARTH_RADIUS: f32 = 6371008.8;
 
 pub(crate) use lng_lat::LngLat;
 pub(crate) use lng_lat_bounds::LngLatBounds;
-pub(crate) use mercator_coordinate::{
-    mercator_x_from_lng, mercator_y_from_lat, MercatorCoordinate,
-};
+pub(crate) use mercator_coordinate::*;
+
+pub(crate) use transform::Transform;

@@ -15,6 +15,11 @@ impl Color {
         Self { color }
     }
 
+    pub fn new_with_rgba(r: f32, g: f32, b: f32, a: f32) -> Self {
+        let color = rgba(r as u8, g as u8, b as u8, a);
+        Color::new(color)
+    }
+
     pub fn new_with_string(s: &str) -> Result<Color, &'static str> {
         let color = if let Ok((h, s, l)) = scan_fmt!(s, "hsl({d}, {d}%, {d}%)", i32, u8, u8) {
             hsl(h, s, l).to_rgba()
@@ -41,21 +46,21 @@ impl Color {
         Ok(Color::new(color))
     }
 
-    // pub fn red(&self) -> f32 {
-    //     self.color.r.as_f32()
-    // }
+    pub fn red(&self) -> f32 {
+        self.color.r.as_f32()
+    }
 
-    // pub fn green(&self) -> f32 {
-    //     self.color.g.as_f32()
-    // }
+    pub fn green(&self) -> f32 {
+        self.color.g.as_f32()
+    }
 
-    // pub fn blue(&self) -> f32 {
-    //     self.color.b.as_f32()
-    // }
+    pub fn blue(&self) -> f32 {
+        self.color.b.as_f32()
+    }
 
-    // pub fn alpha(&self) -> f32 {
-    //     self.color.a.as_f32()
-    // }
+    pub fn alpha(&self) -> f32 {
+        self.color.a.as_f32()
+    }
 }
 
 impl<'de> Deserialize<'de> for Color {
