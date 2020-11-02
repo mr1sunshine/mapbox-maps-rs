@@ -13,8 +13,8 @@ pub(crate) fn color(from: &Color, to: &Color, t: f32) -> Color {
     )
 }
 
-pub(crate) fn array(from: &Vec<f32>, to: &Vec<f32>, t: f32) -> Vec<f32> {
-    from.into_iter()
+pub(crate) fn array(from: &[f32], to: &[f32], t: f32) -> Vec<f32> {
+    from.iter()
         .enumerate()
         .map(|(i, e)| number(*e, to[i], t))
         .collect()

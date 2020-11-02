@@ -1,9 +1,10 @@
 use super::{
-    mercator_x_from_lng, mercator_y_from_lat, mercator_z_from_altitude, LngLat, MercatorCoordinate,
+    mercator_x_from_lng, mercator_y_from_lat, mercator_z_from_altitude, LngLat, LngLatBounds,
+    MercatorCoordinate,
 };
 use crate::geo::edge_insets::{EdgeInsets, PaddingOptions};
 use crate::util::wrap;
-use nalgebra::{clamp, Matrix, Matrix2, Matrix4, Point2, Vector3};
+use nalgebra::{clamp, Matrix, Matrix4, Point2, Vector3};
 
 const PI: f32 = std::f64::consts::PI as f32;
 
@@ -34,7 +35,7 @@ pub(crate) struct Transform {
     pitch: f32,
     zoom: f32,
     unmodified: bool,
-    // render_world_copies: bool,
+    render_world_copies: bool,
     min_zoom: f32,
     max_zoom: f32,
     min_pitch: f32,
@@ -45,10 +46,46 @@ pub(crate) struct Transform {
 }
 
 impl Transform {
-    pub fn new() -> Self {
-        let mut transform = Default::default();
+    pub fn new(
+        min_zoom: f32,
+        max_zoom: f32,
+        min_pitch: f32,
+        max_pitch: f32,
+        render_world_copies: bool,
+    ) -> Self {
+        let mut transform: Self = Default::default();
+
+        transform.tile_size = 512;
+        transform.max_validate_latitude = 85.051_13;
+        transform.render_world_copies = render_world_copies;
+        transform.min_zoom = min_zoom;
+        transform.max_zoom = max_zoom;
+        transform.min_pitch = min_pitch;
+        transform.max_pitch = max_pitch;
+
+        transform.set_max_bounds(None);
+
+        transform.width = 0.0;
+        transform.height = 0.0;
+        transform.set_center(LngLat::new(0.0, 0.0));
+        transform.set_zoom(0.0);
+        transform.angle = 0.0;
+        transform.set_fov(0.643_501_1);
+        transform.set_pitch(0.0);
+        transform.unmodified = true;
 
         transform
+    }
+
+    pub fn set_max_bounds(&mut self, bounds: Option<LngLatBounds>) {
+        match bounds {
+            Some(bounds) => {
+                self.lng_range = [bounds.get_west(), bounds.get_east()];
+                self.lat_range = [bounds.get_south(), bounds.get_north()];
+                self.constrain();
+            }
+            None => self.lat_range = [-self.max_validate_latitude, self.max_validate_latitude],
+        }
     }
 
     pub fn bearing(&self) -> f32 {
@@ -232,8 +269,8 @@ impl Transform {
 
         m *= Matrix::from_scaled_axis(Vector3::new(1.0, -1.0, 1.0));
         m.append_translation_mut(&Vector3::new(0.0, 0.0, -self.camera_to_center_distance));
-        m *= Matrix4::from_scaled_axis(&Vector3::x() * self.pitch);
-        m *= Matrix4::from_scaled_axis(&Vector3::z() * self.angle);
+        m *= Matrix4::from_scaled_axis(Vector3::x() * self.pitch);
+        m *= Matrix4::from_scaled_axis(Vector3::z() * self.angle);
         m.append_translation_mut(&Vector3::new(-x, -y, 0.0));
 
         self.mercator_matrix = m * Matrix::from_scaled_axis(Vector3::new(

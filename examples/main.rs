@@ -17,7 +17,16 @@ async fn main() -> Result<()> {
 
     let token =
         env::var("MAPBOX_ACCESS_TOKEN").expect("Provide MAPBOX_ACCESS_TOKEN as env variable.");
-    let mut map = Map::new(Config::new(&token, window.clone())).await?;
+    let mut map = Map::new(Config::new(
+        &token,
+        window.clone(),
+        0.0,
+        22.0,
+        0.0,
+        60.0,
+        false,
+    ))
+    .await?;
 
     map.load_style("mapbox/streets-v11").await?;
 
