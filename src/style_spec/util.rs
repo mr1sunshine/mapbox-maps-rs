@@ -1,7 +1,8 @@
 use super::Color;
+use num::traits::Float;
 
-pub(crate) fn number(a: f32, b: f32, t: f32) -> f32 {
-    a * (1.0 - t) + b * t
+pub(crate) fn number<T: Float>(a: T, b: T, t: T) -> T {
+    a * (T::from(1.0).unwrap() - t) + b * t
 }
 
 pub(crate) fn color(from: &Color, to: &Color, t: f32) -> Color {

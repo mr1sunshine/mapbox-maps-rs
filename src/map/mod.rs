@@ -23,15 +23,21 @@ impl Map {
             config.min_zoom(),
             config.max_zoom(),
             config.min_pitch(),
-            config.max_zoom(),
+            config.max_pitch(),
             config.render_world_copies(),
         );
-        Ok(Self {
+        let mut map = Self {
             nm: Rc::new(nm),
             style: None,
             painter,
             transform,
-        })
+        };
+
+        let window_size = config.window().inner_size();
+        map.resize(2560.0, 1338.0);
+        // map.resize(window_size.width as f32, window_size.height as f32);
+
+        Ok(map)
     }
 
     pub async fn load_style(&mut self, uri: &str) -> Result<()> {
@@ -46,5 +52,9 @@ impl Map {
         self.painter.render()?;
 
         Ok(())
+    }
+
+    pub fn resize(&mut self, width: f32, height: f32) {
+        self.transform.resize(width, height);
     }
 }

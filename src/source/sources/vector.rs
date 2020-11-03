@@ -32,7 +32,7 @@ impl Vector {
             }
             None => None,
         };
-        println!("{:#?}", self.tilejson);
+        // println!("{:#?}", self.tilejson);
         Ok(())
     }
 
@@ -46,6 +46,6 @@ impl Vector {
             .canonical()
             .url(&tilejson.tiles, Some(self.options.scheme.clone()));
 
-        println!("url for tile loading: {}", url);
+        // println!("url for tile loading: {}", url);
     }
 }

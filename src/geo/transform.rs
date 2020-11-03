@@ -6,42 +6,42 @@ use crate::geo::edge_insets::{EdgeInsets, PaddingOptions};
 use crate::util::wrap;
 use nalgebra::{clamp, Matrix, Matrix4, Point2, Vector3};
 
-const PI: f32 = std::f64::consts::PI as f32;
+const PI: f64 = std::f64::consts::PI as f64;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub(crate) struct Transform {
     pub tile_size: u32,
     pub tile_zoom: u32,
-    pub lng_range: [f32; 2],
-    pub lat_range: [f32; 2],
-    pub max_validate_latitude: f32,
-    pub scale: f32,
-    pub width: f32,
-    pub height: f32,
-    pub angle: f32,
-    // pub rotation_matrix: Matrix2<f32>,
-    pub zoom_fraction: f32,
-    // pub pixels_to_gl_units: [f32; 2],
-    pub camera_to_center_distance: f32,
-    pub mercator_matrix: Matrix4<f32>,
-    pub proj_matrix: Matrix4<f32>,
-    pub inv_proj_matrix: Matrix4<f32>,
-    pub aligned_proj_matrix: Matrix4<f32>,
-    pub pixel_matrix: Matrix4<f32>,
-    pub pixel_matrix_inverse: Matrix4<f32>,
-    pub gl_coord_matrix: Matrix4<f32>,
-    pub label_plane_matrix: Matrix4<f32>,
-    fov: f32,
-    pitch: f32,
-    zoom: f32,
+    pub lng_range: [f64; 2],
+    pub lat_range: [f64; 2],
+    pub max_validate_latitude: f64,
+    pub scale: f64,
+    pub width: f64,
+    pub height: f64,
+    pub angle: f64,
+    // pub rotation_matrix: Matrix2<f64>,
+    pub zoom_fraction: f64,
+    pub pixels_to_gl_units: [f64; 2],
+    pub camera_to_center_distance: f64,
+    pub mercator_matrix: Matrix4<f64>,
+    pub proj_matrix: Matrix4<f64>,
+    pub inv_proj_matrix: Matrix4<f64>,
+    pub aligned_proj_matrix: Matrix4<f64>,
+    pub pixel_matrix: Matrix4<f64>,
+    pub pixel_matrix_inverse: Matrix4<f64>,
+    pub gl_coord_matrix: Matrix4<f64>,
+    pub label_plane_matrix: Matrix4<f64>,
+    fov: f64,
+    pitch: f64,
+    zoom: f64,
     unmodified: bool,
     render_world_copies: bool,
-    min_zoom: f32,
-    max_zoom: f32,
-    min_pitch: f32,
-    max_pitch: f32,
-    center: LngLat,
-    edge_insets: EdgeInsets,
+    min_zoom: f64,
+    max_zoom: f64,
+    min_pitch: f64,
+    max_pitch: f64,
+    center: LngLat<f64>,
+    edge_insets: EdgeInsets<f64>,
     constraining: bool,
 }
 
@@ -56,28 +56,28 @@ impl Transform {
         let mut transform: Self = Default::default();
 
         transform.tile_size = 512;
-        transform.max_validate_latitude = 85.051_13;
+        transform.max_validate_latitude = 85.051129;
         transform.render_world_copies = render_world_copies;
-        transform.min_zoom = min_zoom;
-        transform.max_zoom = max_zoom;
-        transform.min_pitch = min_pitch;
-        transform.max_pitch = max_pitch;
+        transform.min_zoom = min_zoom as f64;
+        transform.max_zoom = max_zoom as f64;
+        transform.min_pitch = min_pitch as f64;
+        transform.max_pitch = max_pitch as f64;
 
         transform.set_max_bounds(None);
 
         transform.width = 0.0;
         transform.height = 0.0;
-        transform.set_center(LngLat::new(0.0, 0.0));
-        transform.set_zoom(0.0);
+        transform.center = LngLat::new(0.0, 0.0);
+        transform.set_zoom(1.39);
         transform.angle = 0.0;
-        transform.set_fov(0.643_501_1);
-        transform.set_pitch(0.0);
+        transform.fov = 0.6435011087932844;
+        transform.pitch = 0.0;
         transform.unmodified = true;
 
         transform
     }
 
-    pub fn set_max_bounds(&mut self, bounds: Option<LngLatBounds>) {
+    pub fn set_max_bounds(&mut self, bounds: Option<LngLatBounds<f64>>) {
         match bounds {
             Some(bounds) => {
                 self.lng_range = [bounds.get_west(), bounds.get_east()];
@@ -88,30 +88,30 @@ impl Transform {
         }
     }
 
-    pub fn bearing(&self) -> f32 {
+    pub fn bearing(&self) -> f64 {
         -self.angle / PI * 180.0
     }
 
-    pub fn set_bearing(&mut self, bearing: f32) {
+    pub fn set_bearing(&mut self, bearing: f64) {
         let b = -wrap(bearing, -180.0, 180.0) * PI / 180.0;
-        if (self.bearing() - b).abs() < f32::EPSILON {
+        if (self.bearing() - b).abs() < f64::EPSILON {
             return;
         }
         self.unmodified = false;
         self.angle = b;
         self.calc_matrices();
 
-        // self.rotation_matrix = Matrix2::<f32>::identity();
+        // self.rotation_matrix = Matrix2::<f64>::identity();
         // self.rotation_matrix *= Matrix4::new_rotation(self.angle);
     }
 
-    pub fn pitch(&self) -> f32 {
+    pub fn pitch(&self) -> f64 {
         self.pitch / PI * 180.0
     }
 
-    pub fn set_pitch(&mut self, pitch: f32) {
+    pub fn set_pitch(&mut self, pitch: f64) {
         let p = clamp(pitch, self.min_pitch, self.max_pitch) / 180.0 * PI;
-        if (self.pitch() - p).abs() < f32::EPSILON {
+        if (self.pitch() - p).abs() < f64::EPSILON {
             return;
         }
 
@@ -120,13 +120,13 @@ impl Transform {
         self.calc_matrices();
     }
 
-    pub fn fov(&self) -> f32 {
+    pub fn fov(&self) -> f64 {
         self.fov / PI * 180.0
     }
 
-    pub fn set_fov(&mut self, fov: f32) {
-        let f = 0.01f32.max(fov.min(60.0));
-        if (self.fov() - f).abs() < f32::EPSILON {
+    pub fn set_fov(&mut self, fov: f64) {
+        let f = 0.01f64.max(fov.min(60.0));
+        if (self.fov() - f).abs() < f64::EPSILON {
             return;
         }
 
@@ -135,13 +135,13 @@ impl Transform {
         self.calc_matrices();
     }
 
-    pub fn zoom(&self) -> f32 {
+    pub fn zoom(&self) -> f64 {
         self.zoom
     }
 
-    pub fn set_zoom(&mut self, zoom: f32) {
+    pub fn set_zoom(&mut self, zoom: f64) {
         let z = self.max_zoom.min(self.min_zoom.max(zoom));
-        if (self.zoom() - z).abs() < f32::EPSILON {
+        if (self.zoom() - z).abs() < f64::EPSILON {
             return;
         }
 
@@ -149,16 +149,16 @@ impl Transform {
         self.zoom = z;
         self.scale = Transform::zoom_scale(z);
         self.tile_zoom = z.floor() as u32;
-        self.zoom_fraction = z - self.tile_zoom as f32;
+        self.zoom_fraction = z - self.tile_zoom as f64;
         self.constrain();
         self.calc_matrices();
     }
 
-    pub fn center(&self) -> &LngLat {
+    pub fn center(&self) -> &LngLat<f64> {
         &self.center
     }
 
-    pub fn set_center(&mut self, center: LngLat) {
+    pub fn set_center(&mut self, center: LngLat<f64>) {
         if self.center == center {
             return;
         }
@@ -169,11 +169,11 @@ impl Transform {
         self.calc_matrices();
     }
 
-    pub fn padding(&self) -> PaddingOptions {
+    pub fn padding(&self) -> PaddingOptions<f64> {
         self.edge_insets.padding_options()
     }
 
-    pub fn set_padding(&mut self, padding: PaddingOptions) {
+    pub fn set_padding(&mut self, padding: PaddingOptions<f64>) {
         let current = self.edge_insets.padding_options();
         if current == padding {
             return;
@@ -184,41 +184,49 @@ impl Transform {
         self.calc_matrices();
     }
 
-    fn scale_zoom(scale: f32) -> f32 {
-        scale.ln() / 2.0f32.ln()
+    fn scale_zoom(scale: f64) -> f64 {
+        scale.ln() / 2.0f64.ln()
     }
 
-    fn zoom_scale(zoom: f32) -> f32 {
-        2.0f32.powf(zoom)
+    fn zoom_scale(zoom: f64) -> f64 {
+        2.0f64.powf(zoom)
     }
 
-    fn covering_zoom_level(&self, round_zoom: bool, tile_size: u32) -> f32 {
-        let tmp = self.zoom + Transform::scale_zoom(self.tile_size as f32 / tile_size as f32);
+    fn covering_zoom_level(&self, round_zoom: bool, tile_size: u32) -> f64 {
+        let tmp = self.zoom + Transform::scale_zoom(self.tile_size as f64 / tile_size as f64);
         let z = if round_zoom { tmp.round() } else { tmp.floor() };
         z.max(0.0)
     }
 
-    pub fn center_point(&self) -> Point2<f32> {
+    pub fn center_point(&self) -> Point2<f64> {
         self.edge_insets.center(self.width, self.height)
     }
 
-    pub fn size(&self) -> Point2<f32> {
+    pub fn size(&self) -> Point2<f64> {
         Point2::new(self.width, self.height)
     }
 
-    pub fn center_offset(&self) -> Point2<f32> {
+    pub fn center_offset(&self) -> Point2<f64> {
         (self.center_point() - self.size() / 2.0).into()
     }
 
-    pub fn point(&self) -> Point2<f32> {
+    pub fn point(&self) -> Point2<f64> {
         self.project(&self.center)
     }
 
-    pub fn world_size(&self) -> f32 {
-        self.tile_size as f32 * self.scale
+    pub fn world_size(&self) -> f64 {
+        self.tile_size as f64 * self.scale
     }
 
-    pub fn project(&self, lng_lat: &LngLat) -> Point2<f32> {
+    pub fn resize(&mut self, width: f32, height: f32) {
+        self.width = width as f64;
+        self.height = height as f64;
+        self.pixels_to_gl_units = [2.0 / self.width, -2.0 / self.height];
+        self.constrain();
+        self.calc_matrices();
+    }
+
+    pub fn project(&self, lng_lat: &LngLat<f64>) -> Point2<f64> {
         let lat = clamp(
             lng_lat.lat(),
             -self.max_validate_latitude,
@@ -231,7 +239,7 @@ impl Transform {
         )
     }
 
-    pub fn unproject(&self, point: &Point2<f32>) -> LngLat {
+    pub fn unproject(&self, point: &Point2<f64>) -> LngLat<f64> {
         MercatorCoordinate::new(
             point.x / self.world_size(),
             point.y / self.world_size(),
@@ -246,10 +254,10 @@ impl Transform {
         };
         let half_fov = self.fov / 2.0;
         let offset = self.center_offset();
-        self.camera_to_center_distance = 0.5 / half_fov.tan() * self.height;
+        self.camera_to_center_distance = 0.5 / half_fov.tan() * self.height as f64;
 
         let ground_angle = PI / 2.0 + self.pitch();
-        let fov_above_center = self.fov * (0.5 + offset.y / self.height);
+        let fov_above_center = self.fov * (0.5 + offset.y as f64 / self.height as f64);
 
         let top_half_surface_distance = fov_above_center.sin() * self.camera_to_center_distance
             / clamp(PI - ground_angle - fov_above_center, 0.01, PI - 0.01).sin();
@@ -262,27 +270,31 @@ impl Transform {
 
         let near_z = self.height / 50.0;
 
-        let mut m = Matrix4::new_perspective(self.width / self.height, self.fov, near_z, far_z);
-
+        let mut m = Matrix4::new_perspective(
+            self.width / self.height,
+            self.fov as f64,
+            near_z,
+            far_z as f64,
+        );
         m[8] = -offset.x * 2.0 / self.width;
         m[9] = offset.y * 2.0 / self.height;
 
-        m *= Matrix::from_scaled_axis(Vector3::new(1.0, -1.0, 1.0));
-        m.append_translation_mut(&Vector3::new(0.0, 0.0, -self.camera_to_center_distance));
-        m *= Matrix4::from_scaled_axis(Vector3::x() * self.pitch);
-        m *= Matrix4::from_scaled_axis(Vector3::z() * self.angle);
-        m.append_translation_mut(&Vector3::new(-x, -y, 0.0));
+        m *= Matrix::new_nonuniform_scaling(&Vector3::new(1.0, -1.0, 1.0));
+        m *= Matrix::new_translation(&Vector3::new(0.0, 0.0, -self.camera_to_center_distance));
+        m *= Matrix::from_axis_angle(&Vector3::x_axis(), self.pitch);
+        m *= Matrix::from_axis_angle(&Vector3::z_axis(), self.angle);
+        m *= Matrix::new_translation(&Vector3::new(-x, -y, 0.0));
 
-        self.mercator_matrix = m * Matrix::from_scaled_axis(Vector3::new(
+        self.mercator_matrix = m * Matrix::new_nonuniform_scaling(&Vector3::new(
             self.world_size(),
             self.world_size(),
             self.world_size(),
         ));
 
-        m *= Matrix::from_scaled_axis(Vector3::new(
+        m *= Matrix::new_nonuniform_scaling(&Vector3::new(
             1.0,
             1.0,
-            mercator_z_from_altitude(1.0, self.center.lat()),
+            mercator_z_from_altitude(1.0, self.center.lat()) * self.world_size(),
         ));
 
         self.proj_matrix = m;
@@ -292,29 +304,37 @@ impl Transform {
         let y_shift = (self.height % 2.0) / 2.0;
         let angle_cos = self.angle.cos();
         let angle_sin = self.angle.sin();
-        let dx = x - x.round() + angle_cos * x_shift + angle_sin * y_shift;
-        let dy = y - y.round() + angle_cos * y_shift + angle_sin * x_shift;
+        let dx = x - x.round() + angle_cos as f64 * x_shift + angle_sin as f64 * y_shift;
+        let dy = y - y.round() + angle_cos as f64 * y_shift + angle_sin as f64 * x_shift;
         let mut aligned_m = m;
-        aligned_m.append_translation_mut(&Vector3::new(
+        aligned_m *= Matrix::new_translation(&Vector3::new(
             if dx > 0.5 { dx - 1.0 } else { dx },
             if dy > 0.5 { dy - 1.0 } else { dy },
             0.0,
         ));
         self.aligned_proj_matrix = aligned_m;
 
-        let mut m = Matrix4::<f32>::identity();
-        m *= Matrix::from_scaled_axis(Vector3::new(self.width / 2.0, -self.height / 2.0, 1.0));
-        m.append_translation_mut(&Vector3::new(1.0, -1.0, 0.0));
+        let mut m = Matrix4::<f64>::identity();
+        println!("m = {:#?}", m);
+        m *= Matrix::new_nonuniform_scaling(&Vector3::new(
+            self.width / 2.0,
+            -self.height / 2.0,
+            1.0,
+        ));
+        m *= Matrix::new_translation(&Vector3::new(1.0, -1.0, 0.0));
         self.label_plane_matrix = m;
 
-        let mut m = Matrix4::<f32>::identity();
-        m *= Matrix::from_scaled_axis(Vector3::new(1.0, -1.0, 1.0));
-        m.append_translation_mut(&Vector3::new(-1.0, -1.0, 0.0));
-        m *= Matrix::from_scaled_axis(Vector3::new(2.0 / self.width, 2.0 / self.height, 1.0));
+        let mut m = Matrix4::<f64>::identity();
+        m *= Matrix::new_nonuniform_scaling(&Vector3::new(1.0, -1.0, 1.0));
+        m *= Matrix::new_translation(&Vector3::new(-1.0, -1.0, 0.0));
+        m *=
+            Matrix::new_nonuniform_scaling(&Vector3::new(2.0 / self.width, 2.0 / self.height, 1.0));
         self.gl_coord_matrix = m;
 
         self.pixel_matrix = self.label_plane_matrix * self.proj_matrix;
         self.pixel_matrix_inverse = self.pixel_matrix.try_inverse().unwrap();
+
+        println!("self = {:#?}", self);
     }
 
     fn constrain(&mut self) {

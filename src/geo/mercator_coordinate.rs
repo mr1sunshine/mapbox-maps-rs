@@ -1,45 +1,57 @@
 use super::LngLat;
+use num::traits::Float;
 
-const PI: f32 = std::f64::consts::PI as f32;
-const EARTH_CIRCUMFRENCE: f32 = 2.0 * PI * super::EARTH_RADIUS; // meters
+const PI: f64 = std::f64::consts::PI;
+const EARTH_CIRCUMFRENCE: f64 = 2.0 * PI * super::EARTH_RADIUS; // meters
 
-fn circumfrence_at_latitude(lat: f32) -> f32 {
-    EARTH_CIRCUMFRENCE * (lat * PI / 180.0).cos()
+fn circumfrence_at_latitude<T: Float>(lat: T) -> T {
+    T::from(EARTH_CIRCUMFRENCE).unwrap()
+        * (lat * T::from(PI).unwrap() / T::from(180.0).unwrap()).cos()
 }
 
-pub(crate) fn mercator_x_from_lng(lng: f32) -> f32 {
-    (180.0 + lng) / 360.0
+pub(crate) fn mercator_x_from_lng<T: Float>(lng: T) -> T {
+    (T::from(180.0).unwrap() + lng) / T::from(360.0).unwrap()
 }
 
-pub(crate) fn mercator_y_from_lat(lat: f32) -> f32 {
-    (180.0 - (180.0 / PI * (PI / 4.0 + lat * PI / 360.0).tan().ln())) / 360.0
+pub(crate) fn mercator_y_from_lat<T: Float>(lat: T) -> T {
+    (T::from(180.0).unwrap()
+        - (T::from(180.0).unwrap() / T::from(PI).unwrap()
+            * (T::from(PI).unwrap() / T::from(4.0).unwrap()
+                + lat * T::from(PI).unwrap() / T::from(360.0).unwrap())
+            .tan()
+            .ln()))
+        / T::from(360.0).unwrap()
 }
 
-pub(crate) fn mercator_z_from_altitude(altitude: f32, lat: f32) -> f32 {
+pub(crate) fn mercator_z_from_altitude<T: Float>(altitude: T, lat: T) -> T {
     altitude / circumfrence_at_latitude(lat)
 }
 
-fn lng_from_mercator_x(x: f32) -> f32 {
-    x * 360.0 - 180.0
+fn lng_from_mercator_x<T: Float>(x: T) -> T {
+    x * T::from(360.0).unwrap() - T::from(180.0).unwrap()
 }
 
-fn lat_from_mercator_y(y: f32) -> f32 {
-    let y2 = 180.0 - y * 360.0;
-    360.0 / PI * (y2 * PI / 180.0).exp().atan() - 90.0
+fn lat_from_mercator_y<T: Float>(y: T) -> T {
+    let y2 = T::from(180.0).unwrap() - y * T::from(360.0).unwrap();
+    T::from(360.0).unwrap() / T::from(PI).unwrap()
+        * (y2 * T::from(PI).unwrap() / T::from(180.0).unwrap())
+            .exp()
+            .atan()
+        - T::from(90.0).unwrap()
 }
 
-pub(crate) struct MercatorCoordinate {
-    x: f32,
-    y: f32,
-    z: f32,
+pub(crate) struct MercatorCoordinate<T: Float> {
+    x: T,
+    y: T,
+    z: T,
 }
 
-impl MercatorCoordinate {
-    pub fn new(x: f32, y: f32, z: f32) -> Self {
+impl<T: Float> MercatorCoordinate<T> {
+    pub fn new(x: T, y: T, z: T) -> Self {
         Self { x, y, z }
     }
 
-    pub fn from_lng_lat(ll: &LngLat, altitude: f32) -> Self {
+    pub fn from_lng_lat(ll: &LngLat<T>, altitude: T) -> Self {
         MercatorCoordinate::new(
             mercator_x_from_lng(ll.lng()),
             mercator_y_from_lat(ll.lat()),
@@ -47,19 +59,19 @@ impl MercatorCoordinate {
         )
     }
 
-    pub fn to_lng_lat(&self) -> LngLat {
+    pub fn to_lng_lat(&self) -> LngLat<T> {
         LngLat::new(lng_from_mercator_x(self.x), lat_from_mercator_y(self.y))
     }
 
-    pub fn x(&self) -> f32 {
+    pub fn x(&self) -> T {
         self.x
     }
 
-    pub fn y(&self) -> f32 {
+    pub fn y(&self) -> T {
         self.y
     }
 
-    pub fn z(&self) -> f32 {
+    pub fn z(&self) -> T {
         self.z
     }
 }

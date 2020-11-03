@@ -30,4 +30,5 @@ radix_fmt = "1.0.0"
 assert_approx_eq = "1.1.0"
 gl_matrix = "0.0.2"
 nalgebra = "0.23.0"
+num = "0.3.0"
 

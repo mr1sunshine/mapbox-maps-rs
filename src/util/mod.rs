@@ -1,9 +1,10 @@
+use num::traits::Float;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-pub(crate) fn wrap(n: f32, min: f32, max: f32) -> f32 {
+pub(crate) fn wrap<T: Float>(n: T, min: T, max: T) -> T {
     let d = max - min;
     let w = ((n - min) % d + d) % d + min;
-    if (w - min).abs() < f32::EPSILON {
+    if (w - min).abs() < T::from(std::f64::EPSILON).unwrap() {
         max
     } else {
         w

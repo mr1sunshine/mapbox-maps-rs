@@ -1,17 +1,17 @@
 use crate::style_spec::util::number;
-// use crate::util::clamp;
 use nalgebra::{clamp, Point2};
+use num::traits::Float;
 
-#[derive(Default)]
-pub(crate) struct EdgeInsets {
-    top: f32,
-    bottom: f32,
-    left: f32,
-    right: f32,
+#[derive(Default, Debug)]
+pub(crate) struct EdgeInsets<T: Float + std::fmt::Debug> {
+    top: T,
+    bottom: T,
+    left: T,
+    right: T,
 }
 
-impl EdgeInsets {
-    pub fn interpolate(&mut self, start: PaddingOptions, target: PaddingOptions, t: f32) {
+impl<T: 'static + Float + std::fmt::Debug> EdgeInsets<T> {
+    pub fn interpolate(&mut self, start: PaddingOptions<T>, target: PaddingOptions<T>, t: T) {
         if let Some(start_top) = start.top {
             if let Some(target_top) = target.top {
                 self.top = number(start_top, target_top, t);
@@ -34,31 +34,39 @@ impl EdgeInsets {
         }
     }
 
-    pub fn center(&self, width: f32, height: f32) -> Point2<f32> {
-        let x = clamp((self.left + width - self.right) / 2.0, 0.0, width);
-        let y = clamp((self.top + height - self.bottom) / 2.0, 0.0, height);
+    pub fn center(&self, width: T, height: T) -> Point2<T> {
+        let x = clamp(
+            (self.left + width - self.right) / T::from(2.0).unwrap(),
+            T::from(0.0).unwrap(),
+            width,
+        );
+        let y = clamp(
+            (self.top + height - self.bottom) / T::from(2.0).unwrap(),
+            T::from(0.0).unwrap(),
+            height,
+        );
 
         Point2::new(x, y)
     }
 
-    pub fn padding_options(&self) -> PaddingOptions {
+    pub fn padding_options(&self) -> PaddingOptions<T> {
         PaddingOptions {
-            top: if self.top != 0.0 {
+            top: if self.top != T::from(0.0).unwrap() {
                 Some(self.top)
             } else {
                 None
             },
-            bottom: if self.bottom != 0.0 {
+            bottom: if self.bottom != T::from(0.0).unwrap() {
                 Some(self.bottom)
             } else {
                 None
             },
-            left: if self.left != 0.0 {
+            left: if self.left != T::from(0.0).unwrap() {
                 Some(self.left)
             } else {
                 None
             },
-            right: if self.right != 0.0 {
+            right: if self.right != T::from(0.0).unwrap() {
                 Some(self.right)
             } else {
                 None
@@ -68,9 +76,9 @@ impl EdgeInsets {
 }
 
 #[derive(Default, PartialEq)]
-pub(crate) struct PaddingOptions {
-    pub top: Option<f32>,
-    pub bottom: Option<f32>,
-    pub left: Option<f32>,
-    pub right: Option<f32>,
+pub(crate) struct PaddingOptions<T: Float> {
+    pub top: Option<T>,
+    pub bottom: Option<T>,
+    pub left: Option<T>,
+    pub right: Option<T>,
 }

@@ -2,11 +2,11 @@ use super::tile_id::CanonicalTileId;
 use crate::geo::{mercator_x_from_lng, mercator_y_from_lat, LngLatBounds};
 
 pub(crate) struct TileBounds {
-    bounds: LngLatBounds,
+    bounds: LngLatBounds<f64>,
 }
 
 impl TileBounds {
-    pub fn new(bounds: &[f32; 4]) -> Self {
+    pub fn new(bounds: &[f64; 4]) -> Self {
         Self {
             bounds: LngLatBounds::convert(&[
                 bounds[0].max(180.0),
@@ -18,7 +18,7 @@ impl TileBounds {
     }
 
     pub fn contains(&self, tile_id: &CanonicalTileId) -> bool {
-        let world_size = 2.0f32.powf(tile_id.z as f32);
+        let world_size = 2.0f64.powf(tile_id.z as f64);
         let min_x = (mercator_x_from_lng(self.bounds.get_west()) * world_size).floor() as u32;
         let min_y = (mercator_y_from_lat(self.bounds.get_north()) * world_size).floor() as u32;
         let max_x = (mercator_x_from_lng(self.bounds.get_east()) * world_size).ceil() as u32;

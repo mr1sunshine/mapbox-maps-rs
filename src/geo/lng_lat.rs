@@ -1,48 +1,54 @@
 use crate::util::wrap;
+use num::traits::Float;
 use std::fmt::{self, Display, Formatter};
 
+const PI: f64 = std::f64::consts::PI;
+
 #[derive(Debug, PartialEq, Clone, Default)]
-pub(crate) struct LngLat {
-    lng: f32,
-    lat: f32,
+pub(crate) struct LngLat<T: Float> {
+    lng: T,
+    lat: T,
 }
 
-impl LngLat {
-    pub fn new(lng: f32, lat: f32) -> Self {
+impl<T: Float> LngLat<T> {
+    pub fn new(lng: T, lat: T) -> Self {
         assert!(
-            lat <= 90.0 && lat >= -90.0,
+            lat <= T::from(90.0).unwrap() && lat >= -T::from(90.0).unwrap(),
             "Invalid LngLat latitude value: must be between -90 and 90"
         );
         Self { lng, lat }
     }
 
-    pub fn wrap(&self) -> LngLat {
-        LngLat::new(wrap(self.lng, -180.0, 180.0), self.lat)
+    pub fn wrap(&self) -> LngLat<T> {
+        LngLat::new(
+            wrap(self.lng, -T::from(180.0).unwrap(), T::from(180.0).unwrap()) as T,
+            self.lat,
+        )
     }
 
-    pub fn to_array(&self) -> [f32; 2] {
+    pub fn to_array(&self) -> [T; 2] {
         [self.lng, self.lat]
     }
 
-    pub fn lng(&self) -> f32 {
+    pub fn lng(&self) -> T {
         self.lng
     }
 
-    pub fn lat(&self) -> f32 {
+    pub fn lat(&self) -> T {
         self.lat
     }
 
-    pub fn distance_to(&self, other: &LngLat) -> f32 {
-        let rad: f32 = std::f64::consts::PI as f32 / 180.0;
+    pub fn distance_to(&self, other: &LngLat<T>) -> T {
+        let rad: T = T::from(PI).unwrap() / T::from(180.0).unwrap();
         let lat1 = self.lat * rad;
         let lat2 = other.lat * rad;
         let a = lat1.sin() * lat2.sin()
             + lat1.cos() * lat2.cos() * ((other.lng - self.lng) * rad).cos();
-        super::EARTH_RADIUS * a.min(1.0).acos()
+        T::from(super::EARTH_RADIUS).unwrap() * a.min(T::from(1.0).unwrap()).acos()
     }
 }
 
-impl Display for LngLat {
+impl<T: Float + std::fmt::Display> Display for LngLat<T> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         // Use `self.number` to refer to each positional data point.
         write!(f, "LngLat({}, {})", self.lng, self.lat)
