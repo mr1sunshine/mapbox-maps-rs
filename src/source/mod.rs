@@ -6,3 +6,4 @@ mod tile_cache;
 mod tile_id;
 
 pub(crate) use source_cache::SourceCache;
+pub(crate) use tile_id::OverscaledTileId;

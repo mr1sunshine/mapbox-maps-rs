@@ -3,6 +3,7 @@ use super::{
     MercatorCoordinate,
 };
 use crate::geo::edge_insets::{EdgeInsets, PaddingOptions};
+use crate::source::OverscaledTileId;
 use crate::util::wrap;
 use nalgebra::{clamp, Matrix, Matrix4, Point2, Vector3};
 
@@ -315,7 +316,6 @@ impl Transform {
         self.aligned_proj_matrix = aligned_m;
 
         let mut m = Matrix4::<f64>::identity();
-        println!("m = {:#?}", m);
         m *= Matrix::new_nonuniform_scaling(&Vector3::new(
             self.width / 2.0,
             -self.height / 2.0,
@@ -333,8 +333,6 @@ impl Transform {
 
         self.pixel_matrix = self.label_plane_matrix * self.proj_matrix;
         self.pixel_matrix_inverse = self.pixel_matrix.try_inverse().unwrap();
-
-        println!("self = {:#?}", self);
     }
 
     fn constrain(&mut self) {
@@ -434,5 +432,34 @@ impl Transform {
 
         self.unmodified = unmodified;
         self.constraining = false;
+    }
+
+    pub fn covering_tiles(
+        &self,
+        tile_size: u32,
+        min_zoom: Option<f32>,
+        max_zoom: Option<f32>,
+        round_zoom: bool,
+        reparse_overscaled: bool,
+        render_world_copies: bool,
+    ) -> Vec<OverscaledTileId> {
+        let mut z = self.covering_zoom_level(round_zoom, tile_size);
+        let actual_zoom = z;
+
+        if let Some(min_zoom) = min_zoom {
+            if z < min_zoom as f64 {
+                return vec![];
+            }
+        }
+
+        if let Some(max_zoom) = max_zoom {
+            if z > max_zoom as f64 {
+                z = max_zoom as f64;
+            }
+        }
+
+        let center_coord = MercatorCoordinate::from_lng_lat(self.center(), 0.0);
+        let num_tiles = 2u32.pow(tile_size);
+        vec![]
     }
 }
