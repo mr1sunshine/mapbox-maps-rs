@@ -1,3 +1,4 @@
+mod aabb;
 mod frustum;
 
 use num::traits::Float;
@@ -18,4 +19,5 @@ pub(crate) fn unique_id() -> usize {
     COUNTER.fetch_add(1, Ordering::Relaxed)
 }
 
+pub(crate) use aabb::*;
 pub(crate) use frustum::*;
