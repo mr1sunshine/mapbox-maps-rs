@@ -1,29 +1,30 @@
-use nalgebra::{Matrix4, RowVector3, RowVector4, Vector3, Vector4, U3};
+use nalgebra::{Matrix4, Vector4};
 
 #[derive(Debug)]
 pub(crate) struct Frustum {
-    points: Vec<RowVector4<f64>>,
-    planes: Vec<RowVector4<f64>>,
+    points: Vec<Vector4<f64>>,
+    planes: Vec<Vector4<f64>>,
 }
 
 impl Frustum {
-    pub fn new(inv_proj: &Matrix4<f64>, world_size: f64, zoom: f64) -> Self {
+    pub fn new(inv_proj: &Vec<f64>, world_size: f64, zoom: f64) -> Self {
+        let inv_proj = Matrix4::from_vec(inv_proj.clone());
         let clip_space_corners = [
-            RowVector4::new(-1.0, 1.0, -1.0, 1.0),
-            RowVector4::new(1.0, 1.0, -1.0, 1.0),
-            RowVector4::new(1.0, -1.0, -1.0, 1.0),
-            RowVector4::new(-1.0, -1.0, -1.0, 1.0),
-            RowVector4::new(-1.0, 1.0, 1.0, 1.0),
-            RowVector4::new(1.0, 1.0, 1.0, 1.0),
-            RowVector4::new(1.0, -1.0, 1.0, 1.0),
-            RowVector4::new(-1.0, -1.0, 1.0, 1.0),
+            Vector4::new(-1.0, 1.0, -1.0, 1.0),
+            Vector4::new(1.0, 1.0, -1.0, 1.0),
+            Vector4::new(1.0, -1.0, -1.0, 1.0),
+            Vector4::new(-1.0, -1.0, -1.0, 1.0),
+            Vector4::new(-1.0, 1.0, 1.0, 1.0),
+            Vector4::new(1.0, 1.0, 1.0, 1.0),
+            Vector4::new(1.0, -1.0, 1.0, 1.0),
+            Vector4::new(-1.0, -1.0, 1.0, 1.0),
         ];
 
         let scale = 2f64.powf(zoom);
 
-        let points: Vec<RowVector4<f64>> = clip_space_corners
+        let points: Vec<Vector4<f64>> = clip_space_corners
             .iter()
-            .map(|v| v * inv_proj)
+            .map(|v| inv_proj * v)
             .map(|v| v.scale(1.0 / v[3] / world_size * scale))
             .collect();
 
@@ -36,27 +37,27 @@ impl Frustum {
             &[0, 4, 5], // top
         ];
 
-        let planes: Vec<RowVector4<f64>> = FRUSTUM_PLANE_POINT_INDICES
+        let planes: Vec<Vector4<f64>> = FRUSTUM_PLANE_POINT_INDICES
             .iter()
             .map(|p| {
                 let a = points[p[0]] - points[p[1]];
-                let a = a.remove_column(3);
+                let a = a.remove_row(3);
                 let b = points[p[2]] - points[p[1]];
-                let b = b.remove_column(3);
+                let b = b.remove_row(3);
                 let n = a.cross(&b).normalize();
-                let d = -n.dot(&points[p[1]].remove_column(3));
-                n.insert_column(3, d)
+                let d = -n.dot(&points[p[1]].remove_row(3));
+                n.insert_row(3, d)
             })
             .collect();
 
         Self { points, planes }
     }
 
-    pub fn points(&self) -> &Vec<RowVector4<f64>> {
+    pub fn points(&self) -> &Vec<Vector4<f64>> {
         &self.points
     }
 
-    pub fn planes(&self) -> &Vec<RowVector4<f64>> {
+    pub fn planes(&self) -> &Vec<Vector4<f64>> {
         &self.planes
     }
 }
@@ -67,7 +68,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let mat = Matrix4::new(
+        let mat = vec![
             0.637767812655705,
             0.0,
             0.0,
@@ -84,56 +85,56 @@ mod tests {
             12.701391466012076,
             1103646.603751624,
             0.01893126532384179,
-        );
+        ];
 
         let world_size = 1341.8428455509638;
         let zoom = 1.0;
         let f = Frustum::new(&mat, world_size, zoom);
 
         let points = vec![
-            RowVector4::new(
+            Vector4::new(
                 0.9745623465173241,
                 0.986704851421945,
                 88050.65437506074,
                 0.0014904875087505462,
             ),
-            RowVector4::new(
+            Vector4::new(
                 1.0254376534826761,
                 0.986704851421945,
                 88050.65437506074,
                 0.0014904875087505462,
             ),
-            RowVector4::new(
+            Vector4::new(
                 1.0254376534826761,
                 1.013295148578055,
                 88050.65437506074,
                 0.0014904875087505462,
             ),
-            RowVector4::new(
+            Vector4::new(
                 0.9745623465173241,
                 1.013295148578055,
                 88050.65437506074,
                 0.0014904875087505462,
             ),
-            RowVector4::new(
+            Vector4::new(
                 -0.926902251312708,
                 -0.007107504787660734,
                 -892.4052808279938,
                 0.0014904875087505462,
             ),
-            RowVector4::new(
+            Vector4::new(
                 2.926902251312682,
                 -0.007107504787660734,
                 -892.4052808279938,
                 0.0014904875087505462,
             ),
-            RowVector4::new(
+            Vector4::new(
                 2.926902251312682,
                 2.0071075047876454,
                 -892.4052808279938,
                 0.0014904875087505462,
             ),
-            RowVector4::new(
+            Vector4::new(
                 -0.926902251312708,
                 2.0071075047876454,
                 -892.4052808279938,
@@ -143,27 +144,27 @@ mod tests {
         assert_eq!(points, *f.points());
 
         let planes = vec![
-            RowVector4::new(0.0, 0.0, -1.0, 88050.65437506074),
-            RowVector4::new(0.0, -0.0, 1.0, 892.4052808279938),
-            RowVector4::new(
+            Vector4::new(0.0, 0.0, -1.0, 88050.65437506074),
+            Vector4::new(0.0, -0.0, 1.0, 892.4052808279938),
+            Vector4::new(
                 0.9999999997714809,
                 0.0,
                 -0.00002137844824264058,
                 0.9078240109932523,
             ),
-            RowVector4::new(
+            Vector4::new(
                 -0.9999999997714809,
                 0.0,
                 -0.00002137844824264029,
                 2.9078240105361886,
             ),
-            RowVector4::new(
+            Vector4::new(
                 -0.0,
                 -0.9999999999375756,
                 -0.000011173579591173352,
                 1.9971361432294379,
             ),
-            RowVector4::new(
+            Vector4::new(
                 0.0,
                 0.9999999999375757,
                 -0.000011173579591173525,

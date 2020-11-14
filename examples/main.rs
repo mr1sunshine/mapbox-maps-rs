@@ -1,5 +1,6 @@
 use eyre::Result;
 // use futures::executor::block_on;
+use futures::executor::block_on;
 use mapbox_maps::{Config, Map};
 use std::env;
 use std::rc::Rc;
@@ -24,7 +25,7 @@ async fn main() -> Result<()> {
         22.0,
         0.0,
         60.0,
-        false,
+        true,
     ))
     .await?;
 
@@ -50,7 +51,10 @@ async fn main() -> Result<()> {
             },
             Event::RedrawRequested(_) => {
                 println!("redraw requested");
-                map.render().expect("Render failed");
+                match block_on(map.render()) {
+                    Ok(_) => {}
+                    Err(e) => println!("Failed to render {}", e),
+                }
             }
             _ => (),
         }

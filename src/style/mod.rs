@@ -1,3 +1,4 @@
+use crate::geo::Transform;
 use crate::network::NetworkManager;
 use crate::source::SourceCache;
 use crate::style_spec;
@@ -8,7 +9,7 @@ use std::rc::Rc;
 pub(crate) struct Style {
     _style: style_spec::Style,
     _nm: Rc<NetworkManager>,
-    _sources: HashMap<String, SourceCache>,
+    sources: HashMap<String, SourceCache>,
 }
 
 impl Style {
@@ -27,7 +28,15 @@ impl Style {
         Ok(Self {
             _style: style,
             _nm: nm,
-            _sources: sources,
+            sources,
         })
+    }
+
+    pub async fn update_sources(&mut self, transform: &Transform) -> Result<()> {
+        for source in self.sources.values_mut() {
+            source.update(transform).await?;
+        }
+
+        Ok(())
     }
 }

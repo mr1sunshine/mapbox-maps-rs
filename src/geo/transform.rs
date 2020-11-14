@@ -4,8 +4,9 @@ use super::{
 };
 use crate::geo::edge_insets::{EdgeInsets, PaddingOptions};
 use crate::source::OverscaledTileId;
-use crate::util::wrap;
+use crate::util::{wrap, Aabb, Frustum, IntersectionType};
 use nalgebra::{clamp, Matrix, Matrix4, Point2, Vector3};
+use std::collections::VecDeque;
 
 const PI: f64 = std::f64::consts::PI as f64;
 
@@ -24,14 +25,14 @@ pub(crate) struct Transform {
     pub zoom_fraction: f64,
     pub pixels_to_gl_units: [f64; 2],
     pub camera_to_center_distance: f64,
-    pub mercator_matrix: Matrix4<f64>,
-    pub proj_matrix: Matrix4<f64>,
-    pub inv_proj_matrix: Matrix4<f64>,
-    pub aligned_proj_matrix: Matrix4<f64>,
-    pub pixel_matrix: Matrix4<f64>,
-    pub pixel_matrix_inverse: Matrix4<f64>,
-    pub gl_coord_matrix: Matrix4<f64>,
-    pub label_plane_matrix: Matrix4<f64>,
+    pub mercator_matrix: Vec<f64>,
+    pub proj_matrix: Vec<f64>,
+    pub inv_proj_matrix: Vec<f64>,
+    pub aligned_proj_matrix: Vec<f64>,
+    pub pixel_matrix: Vec<f64>,
+    pub pixel_matrix_inverse: Vec<f64>,
+    pub gl_coord_matrix: Vec<f64>,
+    pub label_plane_matrix: Vec<f64>,
     fov: f64,
     pitch: f64,
     zoom: f64,
@@ -286,11 +287,13 @@ impl Transform {
         m *= Matrix::from_axis_angle(&Vector3::z_axis(), self.angle);
         m *= Matrix::new_translation(&Vector3::new(-x, -y, 0.0));
 
-        self.mercator_matrix = m * Matrix::new_nonuniform_scaling(&Vector3::new(
+        self.mercator_matrix = (m * Matrix4::new_nonuniform_scaling(&Vector3::new(
             self.world_size(),
             self.world_size(),
             self.world_size(),
-        ));
+        )))
+        .as_slice()
+        .to_owned();
 
         m *= Matrix::new_nonuniform_scaling(&Vector3::new(
             1.0,
@@ -298,8 +301,10 @@ impl Transform {
             mercator_z_from_altitude(1.0, self.center.lat()) * self.world_size(),
         ));
 
-        self.proj_matrix = m;
-        self.inv_proj_matrix = self.proj_matrix.try_inverse().unwrap();
+        let proj_matrix = m;
+        self.proj_matrix = proj_matrix.as_slice().to_owned();
+
+        self.inv_proj_matrix = proj_matrix.try_inverse().unwrap().as_slice().to_owned();
 
         let x_shift = (self.width % 2.0) / 2.0;
         let y_shift = (self.height % 2.0) / 2.0;
@@ -308,12 +313,12 @@ impl Transform {
         let dx = x - x.round() + angle_cos as f64 * x_shift + angle_sin as f64 * y_shift;
         let dy = y - y.round() + angle_cos as f64 * y_shift + angle_sin as f64 * x_shift;
         let mut aligned_m = m;
-        aligned_m *= Matrix::new_translation(&Vector3::new(
+        aligned_m *= Matrix4::new_translation(&Vector3::new(
             if dx > 0.5 { dx - 1.0 } else { dx },
             if dy > 0.5 { dy - 1.0 } else { dy },
             0.0,
         ));
-        self.aligned_proj_matrix = aligned_m;
+        self.aligned_proj_matrix = aligned_m.as_slice().to_owned();
 
         let mut m = Matrix4::<f64>::identity();
         m *= Matrix::new_nonuniform_scaling(&Vector3::new(
@@ -322,17 +327,19 @@ impl Transform {
             1.0,
         ));
         m *= Matrix::new_translation(&Vector3::new(1.0, -1.0, 0.0));
-        self.label_plane_matrix = m;
+        let label_plane_matrix = m;
+        self.label_plane_matrix = label_plane_matrix.as_slice().to_owned();
 
         let mut m = Matrix4::<f64>::identity();
         m *= Matrix::new_nonuniform_scaling(&Vector3::new(1.0, -1.0, 1.0));
         m *= Matrix::new_translation(&Vector3::new(-1.0, -1.0, 0.0));
         m *=
             Matrix::new_nonuniform_scaling(&Vector3::new(2.0 / self.width, 2.0 / self.height, 1.0));
-        self.gl_coord_matrix = m;
+        self.gl_coord_matrix = m.as_slice().to_owned();
 
-        self.pixel_matrix = self.label_plane_matrix * self.proj_matrix;
-        self.pixel_matrix_inverse = self.pixel_matrix.try_inverse().unwrap();
+        let pixel_matrix = label_plane_matrix * proj_matrix;
+        self.pixel_matrix = pixel_matrix.as_slice().to_owned();
+        self.pixel_matrix_inverse = pixel_matrix.try_inverse().unwrap().as_slice().to_owned();
     }
 
     fn constrain(&mut self) {
@@ -459,7 +466,121 @@ impl Transform {
         }
 
         let center_coord = MercatorCoordinate::from_lng_lat(self.center(), 0.0);
-        let num_tiles = 2u32.pow(tile_size);
-        vec![]
+        let num_tiles = 2u32.pow(z as u32);
+        let center_point = Point2::new(
+            num_tiles as f64 * center_coord.x(),
+            num_tiles as f64 * center_coord.y(),
+        );
+        let camera_frustum = Frustum::new(&self.inv_proj_matrix, self.world_size(), z);
+        let mut min_zoom = match min_zoom {
+            Some(min_zoom) => min_zoom,
+            None => 0.0,
+        } as f64;
+        if self.pitch() <= 60.0 && self.edge_insets.top() < 0.1 {
+            min_zoom = z;
+        }
+        let mut stack = VecDeque::new();
+        let mut result = Vec::new();
+        let max_zoom = z;
+        let overscaled_z = if reparse_overscaled { actual_zoom } else { z };
+
+        if render_world_copies {
+            for i in 1..4 {
+                stack.push_back(RootTile::new(-i as f64, num_tiles));
+                stack.push_back(RootTile::new(i as f64, num_tiles));
+            }
+        }
+
+        stack.push_back(RootTile::new(0.0, num_tiles));
+
+        while !stack.is_empty() {
+            let it = match stack.pop_back() {
+                Some(x) => x,
+                None => continue,
+            };
+            let mut fully_visible = it.fully_visible;
+            if !fully_visible {
+                match it.aabb.intersects(&camera_frustum) {
+                    IntersectionType::NoIntersection => continue,
+                    IntersectionType::Inside => fully_visible = true,
+                    IntersectionType::Intersecting => {}
+                }
+            }
+            let distance_x = it.aabb.distance_x(&center_point);
+            let distance_y = it.aabb.distance_y(&center_point);
+            let longest_dim = distance_x.abs().max(distance_y.abs());
+
+            const RADIUS_OF_MAX_LVL_LOD_IN_TILES: f64 = 3.0;
+            let dist_to_split =
+                RADIUS_OF_MAX_LVL_LOD_IN_TILES + (1 << (max_zoom - it.zoom) as i32) as f64 - 2.0;
+
+            if ((it.zoom - max_zoom).abs() < f64::EPSILON)
+                || (longest_dim > dist_to_split && it.zoom >= min_zoom)
+            {
+                result.push((
+                    OverscaledTileId::new(
+                        if (it.zoom - max_zoom).abs() < f64::EPSILON {
+                            overscaled_z
+                        } else {
+                            it.zoom
+                        } as u32,
+                        it.wrap as i32,
+                        it.zoom as u32,
+                        it.x,
+                        it.y,
+                    ),
+                    nalgebra::distance_squared(
+                        &Point2::new(
+                            center_point[0] - 0.5 - it.x as f64,
+                            center_point[1] - 0.5 - it.y as f64,
+                        ),
+                        &Point2::new(0.0, 0.0),
+                    ),
+                ));
+                continue;
+            }
+
+            for i in 0..4 {
+                let child_x = (it.x << 1) + (i % 2);
+                let chile_y = (it.y << 1) + (i >> 1);
+                stack.push_back(RootTile {
+                    aabb: it.aabb.quadrant(i as usize),
+                    zoom: it.zoom + 1.0,
+                    x: child_x,
+                    y: chile_y,
+                    wrap: it.wrap,
+                    fully_visible,
+                })
+            }
+        }
+        result.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+        result.iter().map(|a| a.0.clone()).collect()
+    }
+}
+
+#[derive(Debug)]
+struct RootTile {
+    pub aabb: Aabb,
+    pub zoom: f64,
+    pub x: u32,
+    pub y: u32,
+    pub wrap: f64,
+    pub fully_visible: bool,
+}
+
+impl RootTile {
+    pub fn new(wrap: f64, num_tiles: u32) -> Self {
+        let num_tiles = num_tiles as f64;
+        Self {
+            aabb: Aabb::new(
+                Vector3::new(wrap * num_tiles, 0.0, 0.0),
+                Vector3::new((wrap + 1.0) * num_tiles, num_tiles, 0.0),
+            ),
+            zoom: 0.0,
+            x: 0,
+            y: 0,
+            wrap,
+            fully_visible: false,
+        }
     }
 }

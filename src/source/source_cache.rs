@@ -1,5 +1,6 @@
 use super::sources::Source;
 use super::tile_cache::TileCache;
+use crate::geo::Transform;
 use crate::network::NetworkManager;
 use crate::style_spec;
 use eyre::Result;
@@ -21,5 +22,17 @@ impl SourceCache {
 
         source.load().await?;
         Ok(Self { source, tile_cache })
+    }
+
+    pub async fn update(&mut self, transform: &Transform) -> Result<()> {
+        let ideal_tile_ids = transform.covering_tiles(
+            self.source.tile_size(),
+            Some(self.source.min_zoom()),
+            Some(self.source.max_zoom()),
+            self.source.round_zoom(),
+            self.source.reparse_overscaled(),
+            self.source.render_world_copies(),
+        );
+        Ok(())
     }
 }

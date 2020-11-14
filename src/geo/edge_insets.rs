@@ -73,6 +73,10 @@ impl<T: 'static + Float + std::fmt::Debug> EdgeInsets<T> {
             },
         }
     }
+
+    pub fn top(&self) -> T {
+        self.top
+    }
 }
 
 #[derive(Default, PartialEq)]

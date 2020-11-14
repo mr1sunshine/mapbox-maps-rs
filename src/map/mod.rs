@@ -33,7 +33,7 @@ impl Map {
             transform,
         };
 
-        let window_size = config.window().inner_size();
+        // let window_size = config.window().inner_size();
         map.resize(2560.0, 1338.0);
         // map.resize(window_size.width as f32, window_size.height as f32);
 
@@ -46,11 +46,17 @@ impl Map {
         Ok(())
     }
 
-    pub fn render(&mut self) -> Result<()> {
-        println!("Map rendered");
+    pub async fn render(&mut self) -> Result<()> {
+        let style = match &mut self.style {
+            Some(style) => style,
+            None => return Ok(()),
+        };
+
+        style.update_sources(&self.transform).await?;
 
         self.painter.render()?;
 
+        println!("Map rendered");
         Ok(())
     }
 

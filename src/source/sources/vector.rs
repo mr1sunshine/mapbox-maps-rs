@@ -1,7 +1,10 @@
 use crate::network::NetworkManager;
 use crate::source::tile::Tile;
+use crate::source::tile_bounds::TileBounds;
+use crate::source::OverscaledTileId;
 use crate::style_spec;
 use eyre::Result;
+use std::convert::TryFrom;
 use std::rc::Rc;
 use tilejson::TileJson;
 
@@ -10,6 +13,7 @@ pub(crate) struct Vector {
     nm: Rc<NetworkManager>,
     name: String,
     tilejson: Option<TileJson>,
+    tile_bounds: Option<TileBounds>,
     options: style_spec::Vector,
 }
 
@@ -19,6 +23,7 @@ impl Vector {
             nm,
             name: name.to_owned(),
             tilejson: None,
+            tile_bounds: None,
             options: options.clone(),
         }
     }
@@ -28,11 +33,14 @@ impl Vector {
             Some(url) => {
                 let tilejson = self.nm.load_tilejson(&url).await?;
                 let tilejson = serde_json::from_str::<TileJson>(&tilejson)?;
+                self.tile_bounds = Some(TileBounds::new(
+                    <&[f64; 4]>::try_from(&tilejson.bounds[0..4]).unwrap(),
+                ));
                 Some(tilejson)
             }
             None => None,
         };
-        // println!("{:#?}", self.tilejson);
+        println!("Source \"{}\" loaded", self.name);
         Ok(())
     }
 
@@ -47,5 +55,32 @@ impl Vector {
             .url(&tilejson.tiles, Some(self.options.scheme.clone()));
 
         // println!("url for tile loading: {}", url);
+    }
+
+    pub fn has_tile(&self, tile_id: &OverscaledTileId) -> bool {
+        let tile_bounds = match &self.tile_bounds {
+            Some(tile_bounds) => tile_bounds,
+            None => return false,
+        };
+
+        tile_bounds.contains(tile_id.canonical())
+    }
+
+    pub fn tile_size(&self) -> u32 {
+        512
+    }
+
+    pub fn min_zoom(&self) -> f32 {
+        match &self.tilejson {
+            Some(t) => t.minzoom as f32,
+            None => 22.0,
+        }
+    }
+
+    pub fn max_zoom(&self) -> f32 {
+        match &self.tilejson {
+            Some(t) => t.maxzoom as f32,
+            None => 22.0,
+        }
     }
 }

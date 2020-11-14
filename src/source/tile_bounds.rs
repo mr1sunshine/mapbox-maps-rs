@@ -1,6 +1,7 @@
 use super::tile_id::CanonicalTileId;
 use crate::geo::{mercator_x_from_lng, mercator_y_from_lat, LngLatBounds};
 
+#[derive(Debug)]
 pub(crate) struct TileBounds {
     bounds: LngLatBounds<f64>,
 }

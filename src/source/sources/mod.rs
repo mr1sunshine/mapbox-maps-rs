@@ -1,6 +1,7 @@
 mod vector;
 
 use crate::network::NetworkManager;
+use crate::source::OverscaledTileId;
 use crate::style_spec;
 use eyre::Result;
 use std::rc::Rc;
@@ -34,5 +35,49 @@ impl Source {
         }
 
         Ok(())
+    }
+
+    pub fn has_tile(&self, tile_id: &OverscaledTileId) -> bool {
+        if let Source::Vector(v) = self {
+            return v.has_tile(tile_id);
+        }
+
+        true
+    }
+
+    pub fn tile_size(&self) -> u32 {
+        if let Source::Vector(v) = self {
+            return v.tile_size();
+        }
+
+        512
+    }
+
+    pub fn min_zoom(&self) -> f32 {
+        if let Source::Vector(v) = self {
+            return v.min_zoom();
+        }
+
+        0.0
+    }
+
+    pub fn max_zoom(&self) -> f32 {
+        if let Source::Vector(v) = self {
+            return v.max_zoom();
+        }
+
+        0.0
+    }
+
+    pub fn round_zoom(&self) -> bool {
+        false
+    }
+
+    pub fn reparse_overscaled(&self) -> bool {
+        false
+    }
+
+    pub fn render_world_copies(&self) -> bool {
+        true
     }
 }
