@@ -1,6 +1,6 @@
-use super::sources::Source;
 use super::sources::SourceControl;
 use super::tile_cache::TileCache;
+use super::{sources::Source, tile::Tile, OverscaledTileId};
 use crate::geo::Transform;
 use crate::network::NetworkManager;
 use crate::style_spec;
@@ -34,6 +34,16 @@ impl SourceCache {
             self.source.reparse_overscaled(),
             self.source.render_world_copies(),
         );
+        for tile_id in ideal_tile_ids {
+            self.add_tile(tile_id.clone()).await?;
+        }
+        Ok(())
+    }
+
+    async fn add_tile(&mut self, tile_id: OverscaledTileId) -> Result<()> {
+        let size = (self.source.tile_size() * tile_id.overscaled_factor()) as usize;
+        let mut tile = Tile::new(tile_id, size);
+        self.source.load_tile(&mut tile).await?;
         Ok(())
     }
 }

@@ -29,19 +29,6 @@ impl Vector {
             options: options.clone(),
         }
     }
-
-    async fn load_tile(&self, tile: &mut Tile) {
-        let tilejson = match &self.tilejson {
-            Some(t) => t,
-            None => return,
-        };
-        let url = tile
-            .tile_id()
-            .canonical()
-            .url(&tilejson.tiles, Some(self.options.scheme.clone()));
-
-        // println!("url for tile loading: {}", url);
-    }
 }
 
 #[async_trait]
@@ -71,6 +58,22 @@ impl SourceControl for Vector {
         tile_bounds.contains(tile_id.canonical())
     }
 
+    async fn load_tile(&self, tile: &mut Tile) -> Result<()> {
+        let tilejson = match &self.tilejson {
+            Some(t) => t,
+            None => return Ok(()),
+        };
+        let url = tile
+            .tile_id()
+            .canonical()
+            .url(&tilejson.tiles, Some(self.options.scheme.clone()));
+
+        let vector_tile = self.nm.load_vector_tile(&url).await?;
+        tile.set_vector_data(vector_tile);
+
+        Ok(())
+    }
+
     fn tile_size(&self) -> u32 {
         512
     }
@@ -90,14 +93,14 @@ impl SourceControl for Vector {
     }
 
     fn round_zoom(&self) -> bool {
-        todo!()
+        false
     }
 
     fn reparse_overscaled(&self) -> bool {
-        todo!()
+        false
     }
 
     fn render_world_copies(&self) -> bool {
-        todo!()
+        true
     }
 }

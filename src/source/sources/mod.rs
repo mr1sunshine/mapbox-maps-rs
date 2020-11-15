@@ -19,11 +19,14 @@ use std::sync::Arc;
 use vector::Vector;
 use video::Video;
 
+use super::tile::Tile;
+
 #[async_trait]
 #[enum_dispatch]
 pub(crate) trait SourceControl {
     async fn load(&mut self) -> Result<()>;
     fn has_tile(&self, tile_id: &OverscaledTileId) -> bool;
+    async fn load_tile(&self, tile: &mut Tile) -> Result<()>;
     fn tile_size(&self) -> u32;
     fn min_zoom(&self) -> f32;
     fn max_zoom(&self) -> f32;

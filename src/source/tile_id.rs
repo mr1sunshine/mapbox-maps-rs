@@ -162,6 +162,10 @@ impl OverscaledTileId {
     pub fn canonical(&self) -> &CanonicalTileId {
         &self.canonical
     }
+
+    pub fn overscaled_factor(&self) -> u32 {
+        2u32.pow(self.overscaled_z - self.canonical.z)
+    }
 }
 
 impl PartialEq for OverscaledTileId {

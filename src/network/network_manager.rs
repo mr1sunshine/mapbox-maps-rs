@@ -1,4 +1,5 @@
 use eyre::Result;
+use mvt::{decode, FeatureWithCoordinates, Tile};
 use reqwest::{Client, ClientBuilder};
 
 const MAPBOX_API_ENDPOINT: &str = "https://api.mapbox.com";
@@ -38,5 +39,17 @@ impl NetworkManager {
         let res = self.client.get(&url).send().await?;
         let body = res.text().await?;
         Ok(body)
+    }
+
+    pub async fn load_vector_tile(&self, uri: &str) -> Result<(mvt::Tile<FeatureWithCoordinates>)> {
+        let url = uri
+            .to_string()
+            .replace("http", "https")
+            .replace("a.tiles", "api")
+            .replace("b.tiles", "api");
+        let res = self.client.get(&url).send().await?;
+        let body = res.bytes().await?;
+        let tile: Tile<FeatureWithCoordinates> = decode(&body)?;
+        Ok((tile))
     }
 }
