@@ -59,7 +59,7 @@ fn default_scheme() -> Scheme {
     Scheme::XYZ
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub(crate) struct Raster {
     pub attribution: Option<String>,
     #[serde(default = "default_bounds")]
@@ -80,7 +80,7 @@ fn default_tile_size() -> f32 {
     512.0
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub(crate) struct RasterDEM {
     pub attribution: Option<String>,
     #[serde(default = "default_bounds")]
@@ -97,7 +97,7 @@ pub(crate) struct RasterDEM {
     pub url: Option<String>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub enum Encoding {
     #[serde(rename = "terrarium")]
     Terrarium,
@@ -109,7 +109,7 @@ fn default_encoding() -> Encoding {
     Encoding::Mapbox
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub(crate) struct GeoJSON {
     pub attribution: Option<String>,
     #[serde(default = "default_buffer")]
@@ -157,13 +157,13 @@ fn default_tolerance() -> f32 {
     0.375
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub(crate) struct Image {
     url: String,
     coordinates: Vec<Vec<f32>>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub(crate) struct Video {
     urls: Vec<String>,
     coordinates: Vec<Vec<f32>>,

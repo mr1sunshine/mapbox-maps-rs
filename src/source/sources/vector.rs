@@ -1,16 +1,18 @@
+use super::SourceControl;
 use crate::network::NetworkManager;
 use crate::source::tile::Tile;
 use crate::source::tile_bounds::TileBounds;
 use crate::source::OverscaledTileId;
 use crate::style_spec;
+use async_trait::async_trait;
 use eyre::Result;
 use std::convert::TryFrom;
-use std::rc::Rc;
+use std::sync::Arc;
 use tilejson::TileJson;
 
 #[derive(Debug)]
 pub(crate) struct Vector {
-    nm: Rc<NetworkManager>,
+    nm: Arc<NetworkManager>,
     name: String,
     tilejson: Option<TileJson>,
     tile_bounds: Option<TileBounds>,
@@ -18,7 +20,7 @@ pub(crate) struct Vector {
 }
 
 impl Vector {
-    pub fn new(nm: Rc<NetworkManager>, name: &str, options: &style_spec::Vector) -> Self {
+    pub fn new(nm: Arc<NetworkManager>, name: &str, options: &style_spec::Vector) -> Self {
         Self {
             nm,
             name: name.to_owned(),
@@ -28,7 +30,23 @@ impl Vector {
         }
     }
 
-    pub async fn load(&mut self) -> Result<()> {
+    async fn load_tile(&self, tile: &mut Tile) {
+        let tilejson = match &self.tilejson {
+            Some(t) => t,
+            None => return,
+        };
+        let url = tile
+            .tile_id()
+            .canonical()
+            .url(&tilejson.tiles, Some(self.options.scheme.clone()));
+
+        // println!("url for tile loading: {}", url);
+    }
+}
+
+#[async_trait]
+impl SourceControl for Vector {
+    async fn load(&mut self) -> Result<()> {
         self.tilejson = match &self.options.url {
             Some(url) => {
                 let tilejson = self.nm.load_tilejson(&url).await?;
@@ -44,20 +62,7 @@ impl Vector {
         Ok(())
     }
 
-    pub async fn load_tile(&self, tile: &mut Tile) {
-        let tilejson = match &self.tilejson {
-            Some(t) => t,
-            None => return,
-        };
-        let url = tile
-            .tile_id()
-            .canonical()
-            .url(&tilejson.tiles, Some(self.options.scheme.clone()));
-
-        // println!("url for tile loading: {}", url);
-    }
-
-    pub fn has_tile(&self, tile_id: &OverscaledTileId) -> bool {
+    fn has_tile(&self, tile_id: &OverscaledTileId) -> bool {
         let tile_bounds = match &self.tile_bounds {
             Some(tile_bounds) => tile_bounds,
             None => return false,
@@ -66,21 +71,33 @@ impl Vector {
         tile_bounds.contains(tile_id.canonical())
     }
 
-    pub fn tile_size(&self) -> u32 {
+    fn tile_size(&self) -> u32 {
         512
     }
 
-    pub fn min_zoom(&self) -> f32 {
+    fn min_zoom(&self) -> f32 {
         match &self.tilejson {
             Some(t) => t.minzoom as f32,
             None => 22.0,
         }
     }
 
-    pub fn max_zoom(&self) -> f32 {
+    fn max_zoom(&self) -> f32 {
         match &self.tilejson {
             Some(t) => t.maxzoom as f32,
             None => 22.0,
         }
+    }
+
+    fn round_zoom(&self) -> bool {
+        todo!()
+    }
+
+    fn reparse_overscaled(&self) -> bool {
+        todo!()
+    }
+
+    fn render_world_copies(&self) -> bool {
+        todo!()
     }
 }

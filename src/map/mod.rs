@@ -6,10 +6,10 @@ use crate::render::Painter;
 use crate::style::Style;
 pub use config::Config;
 use eyre::Result;
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub struct Map {
-    nm: Rc<NetworkManager>,
+    nm: Arc<NetworkManager>,
     style: Option<Style>,
     painter: Painter,
     transform: Transform,
@@ -27,7 +27,7 @@ impl Map {
             config.render_world_copies(),
         );
         let mut map = Self {
-            nm: Rc::new(nm),
+            nm: Arc::new(nm),
             style: None,
             painter,
             transform,

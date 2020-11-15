@@ -1,83 +1,59 @@
+mod geo_json;
+mod image;
+mod raster;
+mod raster_dem;
 mod vector;
+mod video;
 
 use crate::network::NetworkManager;
 use crate::source::OverscaledTileId;
 use crate::style_spec;
+use async_trait::async_trait;
+use enum_dispatch::enum_dispatch;
 use eyre::Result;
-use std::rc::Rc;
+use geo_json::GeoJSON;
+use image::Image;
+use raster::Raster;
+use raster_dem::RasterDEM;
+use std::sync::Arc;
 use vector::Vector;
+use video::Video;
 
+#[async_trait]
+#[enum_dispatch]
+pub(crate) trait SourceControl {
+    async fn load(&mut self) -> Result<()>;
+    fn has_tile(&self, tile_id: &OverscaledTileId) -> bool;
+    fn tile_size(&self) -> u32;
+    fn min_zoom(&self) -> f32;
+    fn max_zoom(&self) -> f32;
+    fn round_zoom(&self) -> bool;
+    fn reparse_overscaled(&self) -> bool;
+    fn render_world_copies(&self) -> bool;
+}
+
+#[enum_dispatch(SourceControl)]
 #[derive(Debug)]
 pub(crate) enum Source {
     Vector(Vector),
-    Raster,
-    RasterDEM,
-    GeoJSON,
-    Video,
-    Image,
+    Raster(Raster),
+    RasterDEM(RasterDEM),
+    GeoJSON(GeoJSON),
+    Video(Video),
+    Image(Image),
 }
 
 impl Source {
-    pub fn new(nm: Rc<NetworkManager>, name: &str, source: &style_spec::Source) -> Source {
+    pub fn new(nm: Arc<NetworkManager>, name: &str, source: &style_spec::Source) -> Source {
         match source {
-            style_spec::Source::Vector(data) => Source::Vector(vector::Vector::new(nm, name, data)),
-            style_spec::Source::Raster(_) => Source::Raster,
-            style_spec::Source::RasterDEM(_) => Source::RasterDEM,
-            style_spec::Source::GeoJSON(_) => Source::GeoJSON,
-            style_spec::Source::Video(_) => Source::Video,
-            style_spec::Source::Image(_) => Source::Image,
+            style_spec::Source::Vector(data) => Source::Vector(Vector::new(nm, name, data)),
+            style_spec::Source::Raster(data) => Source::Raster(Raster::new(nm, name, data)),
+            style_spec::Source::RasterDEM(data) => {
+                Source::RasterDEM(RasterDEM::new(nm, name, data))
+            }
+            style_spec::Source::GeoJSON(data) => Source::GeoJSON(GeoJSON::new(nm, name, data)),
+            style_spec::Source::Video(data) => Source::Video(Video::new(nm, name, data)),
+            style_spec::Source::Image(data) => Source::Image(Image::new(nm, name, data)),
         }
-    }
-
-    pub async fn load(&mut self) -> Result<()> {
-        if let Source::Vector(v) = self {
-            v.load().await?;
-        }
-
-        Ok(())
-    }
-
-    pub fn has_tile(&self, tile_id: &OverscaledTileId) -> bool {
-        if let Source::Vector(v) = self {
-            return v.has_tile(tile_id);
-        }
-
-        true
-    }
-
-    pub fn tile_size(&self) -> u32 {
-        if let Source::Vector(v) = self {
-            return v.tile_size();
-        }
-
-        512
-    }
-
-    pub fn min_zoom(&self) -> f32 {
-        if let Source::Vector(v) = self {
-            return v.min_zoom();
-        }
-
-        0.0
-    }
-
-    pub fn max_zoom(&self) -> f32 {
-        if let Source::Vector(v) = self {
-            return v.max_zoom();
-        }
-
-        0.0
-    }
-
-    pub fn round_zoom(&self) -> bool {
-        false
-    }
-
-    pub fn reparse_overscaled(&self) -> bool {
-        false
-    }
-
-    pub fn render_world_copies(&self) -> bool {
-        true
     }
 }

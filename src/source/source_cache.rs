@@ -1,10 +1,11 @@
 use super::sources::Source;
+use super::sources::SourceControl;
 use super::tile_cache::TileCache;
 use crate::geo::Transform;
 use crate::network::NetworkManager;
 use crate::style_spec;
 use eyre::Result;
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub(crate) struct SourceCache {
     source: Source,
@@ -13,7 +14,7 @@ pub(crate) struct SourceCache {
 
 impl SourceCache {
     pub async fn new(
-        nm: Rc<NetworkManager>,
+        nm: Arc<NetworkManager>,
         name: &str,
         source: &style_spec::Source,
     ) -> Result<Self> {
